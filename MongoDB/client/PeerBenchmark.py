@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
+from pymongo import MongoClient
 import time
 import json
 import random
 import argparse
 import sys
-from httplib2 import Http
 
 def get_args():
     """
@@ -40,9 +40,8 @@ class Service():
         self.key_start = index
         self.key_end = end
         self.workload = []
-		self.revision_key = []
-        self.h = Http()
-		self.db = "benchmark"
+        self.mongo_server = []
+        self.mongo_key = []
 
     def _hash_function(self, key):
         """
@@ -56,6 +55,28 @@ class Service():
             return index
         except Exception as e:
             print "hash function error: %s" % e
+
+    def establish_connection(self):
+        """
+        Establish socket connection with MongoDB servers.
+        """
+        try:
+            for i in range(0,len(self.config['servers'])):
+                timeout = 0
+                while timeout < 60:
+                    try:
+                        client = MongoClient(
+                            self.config['servers'][i]['ip'], 
+                            self.config['servers'][i]['port'])
+                        db = client.aos
+                        conn = db.pa4
+                        self.mongo_server.append(conn)
+                        break
+                    except Exception as e:
+                        time.sleep(10)
+                        timeout = timeout + 10
+        except Exception as e:
+            print "Establish Connection Error: %s" % e
 
     def generate_workload(self):
         """
@@ -74,19 +95,21 @@ class Service():
     def put(self, key, value):
         """
         Put method is used to store the key and value in the
-        CouchDB server.
+        MongoDB server.
         @param key:     Key to be stored in the Server.
         @param value:   Value to be stored in the Server.
         """
         try:
-            print "Starting CouchDB Insert Operation Benchmark..."
+            print "Starting MongoDB Insert Operation Benchmark..."
             t1 = time.time()
             for key,value,index in self.workload:
                 data = {
-				    "value" : value
+                    "key" : key,
+                    "value" : value
                     }
-				rp,content=self.h.request("http://"+self.config['servers'][index]['ip']+":5984/"+self.db+"/"+key,  "PUT",headers={"Content-type":"application/json"} ,body=data)
-				self.revision_key[key]=json.loads(content)["rev"]
+                ret = self.mongo_server[index].insert_one(data)
+                if ret:
+                    self.mongo_key.append([ret.inserted_id,index])
             t2 = time.time()
             total_ops = len(self.workload)
             print "Successfully completed: %s operations" % total_ops
@@ -99,16 +122,19 @@ class Service():
     def get(self, key):
         """
         Get method is used to retrieve the value from the
-        CouchDB server.
+        MongoDB server.
         @param key:    the key whose value needs to be retrieved.
         """
         try:
-            print "Starting CouchDB Lookup Operation Benchmark..."
+            print "Starting MongoDB Lookup Operation Benchmark..."
             t1 = time.time()
-            for key,value,index in self.workload:
-				rp=self.h.request("http://"+self.config['servers'][index]['ip']+":5984/"+self.db+"/"+key,  "GET",headers={"Content-type":"application/json"} )
+            for key,index in self.mongo_key:
+                data = {
+                    "_id" : key
+                    }
+                ret = self.mongo_server[index].find_one(data)
             t2 = time.time()
-            total_ops = len(self.workload)
+            total_ops = len(self.mongo_key)
             print "Successfully completed: %s operations" % total_ops
             print "%s Lookup operations = %s sec" % (total_ops,t2-t1)
             print "per Lookup operation = %s msec" % (((t2-t1)/total_ops)*1000)
@@ -119,14 +145,17 @@ class Service():
     def delete(self, key):
         """
         delete method is used to delete the key and value from the
-        CouchDB server.
+        MongoDB server.
         @param key:    the key whose entree needs to be deleted.
         """
         try:
-            print "Starting CouchDB Delete Operation Benchmark..."
+            print "Starting MongoDB Delete Operation Benchmark..."
             t1 = time.time()
-            for key,value,index in self.workload:
-				rp=self.h.request("http://"+self.config['servers'][index]['ip']+":5984/"+self.db+"/"+key+"?rev="+self.revision_key[key],  "DELETE",headers={"Content-type":"application/json"} )
+            for key,index in self.mongo_key:
+                data = {
+                    "_id" : key
+                    }
+                ret = self.mongo_server[index].delete_one(data)
             t2 = time.time()
             total_ops = len(self.workload)
             print "Successfully completed: %s operations" % total_ops
@@ -141,19 +170,23 @@ if __name__ == '__main__':
     Main method starting deamon threads and peer operations.
     """
     try:
-        print "Starting CouchDB Client..."
+        print "Starting MongoDB Client..."
         args = get_args()
         with open(args.config) as f:
             config = json.loads(f.read())
         service = Service(config, args.index, args.end)
         service.establish_connection()
         service.generate_workload()
+        #ret = service.mongo_server[0].delete_many({})
+        #print ret.deleted_count
+        #'''
         time.sleep(1)
         service.put(1,1)
         time.sleep(5)
         service.get(1)
         time.sleep(5)
         service.delete(1)
+        #'''
     except Exception as e:
         print "main function error: %s" % e
         sys.exit(1)
@@ -161,4 +194,3 @@ if __name__ == '__main__':
         print "Peer Shutting down..."
         time.sleep(1)
         sys.exit(1)
-
