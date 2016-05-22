@@ -1,12 +1,10 @@
-Steps to Setup CouchDB:
-3) sudo apt-get update
-4) sudo apt-get install couchdb -y
+#Install CouchDB
 
-Start-Up CouchDB:
-1) sudo start couchdb
+sudo apt-get update
+sudo apt-get install couchdb -y
 
-Shutdown CouchDB:
-1) sudo stop couchdb
+sudo start couchdb
+sudo stop couchdb
 
 Note:
 	* Couch DB default port: 5984
