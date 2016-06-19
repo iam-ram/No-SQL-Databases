@@ -119,7 +119,7 @@ class Service():
     def delete(self, key):
         """
         delete method is used to delete the key and value from the
-        CouchDB server.
+        MongoDB server.
         @param key:    the key whose entree needs to be deleted.
         """
         try:
