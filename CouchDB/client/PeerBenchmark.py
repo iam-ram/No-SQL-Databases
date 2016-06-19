@@ -74,12 +74,12 @@ class Service():
     def put(self, key, value):
         """
         Put method is used to store the key and value in the
-        CouchDB server.
+        MongoDB server.
         @param key:     Key to be stored in the Server.
         @param value:   Value to be stored in the Server.
         """
         try:
-            print "Starting CouchDB Insert Operation Benchmark..."
+            print "Starting MongoDB Insert Operation Benchmark..."
             t1 = time.time()
             for key,value,index in self.workload:
                 data = {
@@ -99,11 +99,11 @@ class Service():
     def get(self, key):
         """
         Get method is used to retrieve the value from the
-        CouchDB server.
+        MongoDB server.
         @param key:    the key whose value needs to be retrieved.
         """
         try:
-            print "Starting CouchDB Lookup Operation Benchmark..."
+            print "Starting MongoDB Lookup Operation Benchmark..."
             t1 = time.time()
             for key,value,index in self.workload:
 				rp=self.h.request("http://"+self.config['servers'][index]['ip']+":5984/"+self.db+"/"+key,  "GET",headers={"Content-type":"application/json"} )
@@ -123,7 +123,7 @@ class Service():
         @param key:    the key whose entree needs to be deleted.
         """
         try:
-            print "Starting CouchDB Delete Operation Benchmark..."
+            print "Starting MongoDB Delete Operation Benchmark..."
             t1 = time.time()
             for key,value,index in self.workload:
 				rp=self.h.request("http://"+self.config['servers'][index]['ip']+":5984/"+self.db+"/"+key+"?rev="+self.revision_key[key],  "DELETE",headers={"Content-type":"application/json"} )
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     Main method starting deamon threads and peer operations.
     """
     try:
-        print "Starting CouchDB Client..."
+        print "Starting MongoDB Client..."
         args = get_args()
         with open(args.config) as f:
             config = json.loads(f.read())
