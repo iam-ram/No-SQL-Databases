@@ -1,22 +1,38 @@
-Download and Install Redis:
-sudo apt-get install gcc
-sudo apt-get install g++
-sudo apt-get install tcl8.6
-wget http://download.redis.io/releases/redis-3.0.5.tar.gz
-tar xzf redis-3.0.5.tar.gz
-cd redis-3.0.5
+#Download Install and Benchmark Redis:
+
+1. Redis installation
+
+sudo apt-get update
+
+sudo apt-get install build-essential
+
+sudo apt-get install tcl8.5
+
+wget http://download.redis.io/releases/redis-stable.tar.gz
+
+tar xzf redis-stable.tar.gz
+
+cd redis-stable
+
 make
 
-Test Installation:
-$ make test
+make test
 
-Start Redis Server:
-$ src/redis-server
+sudo make install
 
-Stop Redis Server:
-control + c
+cd utils
 
-Python Client:
+sudo ./install_server.sh
+
+2. Start Redis
+
+Default port is set to 6379 in redis. it can be changed during config. I am using 7555
+
+sudo service redis_7555 start
+sudo service redis_7555 stop
+
+3. Python Client:
+
 $ sudo pip install redis
 
 Start Client:
